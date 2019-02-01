@@ -10,6 +10,7 @@ var camelCase = require('lodash.camelcase');
 var kebabCase = require('lodash.kebabcase');
 var snakeCase = require('lodash.snakecase');
 var upperFirst = require('lodash.upperfirst');
+var Promise = require('bluebird');
 var pkg = require('./package.json');
 
 require('cli-program')
