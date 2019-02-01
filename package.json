@@ -1,7 +1,7 @@
 {
   "name": "cli-generate",
   "description": "Script for generating code by template",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "bin": {
     "generate": "generate"
   },
@@ -12,6 +12,7 @@
     "glob": "^7.1.3",
     "lodash.camelcase": "^4.3.0",
     "lodash.kebabcase": "^4.1.1",
+    "lodash.snakecase": "^4.1.1",
     "lodash.upperfirst": "^4.3.1",
     "mkdirp": "^0.5.1",
     "npmlog": "^4.1.2",

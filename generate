@@ -8,6 +8,7 @@ var mkdirp = require('mkdirp');
 var pluralize = require('pluralize');
 var camelCase = require('lodash.camelcase');
 var kebabCase = require('lodash.kebabcase');
+var snakeCase = require('lodash.snakecase');
 var upperFirst = require('lodash.upperfirst');
 var pkg = require('./package.json');
 
@@ -82,8 +83,12 @@ function replace(content, model) {
         .replace(/templateModels/g,  camelCase(model) === camelCase(pluralize(model)) ?
             camelCase(model) + 'Collection' : camelCase(pluralize(model)))
         .replace(/templateModel/g,   camelCase(model))
-        .replace(/template-models/g, kebabCase(pluralize(model)))
-        .replace(/template-model/g,  kebabCase(model));
+        .replace(/template-models/g, kebabCase(model) === kebabCase(pluralize(model)) ?
+            kebabCase(pluralize(model)) + '-list' : kebabCase(pluralize(model)))
+        .replace(/template-model/g,  kebabCase(model))
+        .replace(/template-models/g, snakeCase(model) === snakeCase(pluralize(model)) ?
+            snakeCase(pluralize(model)) + '-list' : snakeCase(pluralize(model)))
+        .replace(/template-model/g,  snakeCase(model));
 }
 
 function generate(model, source, target, file) {
