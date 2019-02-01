@@ -78,18 +78,14 @@ function writeFile(path, content) {
 function replace(content, model) {
     return content
         .replace(/\${year}/g, new Date().getFullYear().toString())
-        .replace(/TemplateModels/g,  camelCase(model) === camelCase(pluralize(model)) ?
-            upperFirst(camelCase(model)) + 'List' : upperFirst(camelCase(pluralize(model))))
+        .replace(/TemplateModels/g,  upperFirst(camelCase(pluralize(model))))
         .replace(/TemplateModel/g,   upperFirst(camelCase(model)))
-        .replace(/templateModels/g,  camelCase(model) === camelCase(pluralize(model)) ?
-            camelCase(model) + 'Collection' : camelCase(pluralize(model)))
+        .replace(/templateModels/g,  camelCase(pluralize(model)))
         .replace(/templateModel/g,   camelCase(model))
-        .replace(/template-models/g, kebabCase(model) === kebabCase(pluralize(model)) ?
-            kebabCase(pluralize(model)) + '-list' : kebabCase(pluralize(model)))
+        .replace(/template-models/g, kebabCase(pluralize(model)))
         .replace(/template-model/g,  kebabCase(model))
-        .replace(/template-models/g, snakeCase(model) === snakeCase(pluralize(model)) ?
-            snakeCase(pluralize(model)) + '-list' : snakeCase(pluralize(model)))
-        .replace(/template-model/g,  snakeCase(model));
+        .replace(/template_models/g, snakeCase(pluralize(model)))
+        .replace(/template_model/g,  snakeCase(model));
 }
 
 function generate(model, source, target, file) {
