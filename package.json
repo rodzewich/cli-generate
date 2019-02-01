@@ -1,7 +1,7 @@
 {
   "name": "cli-generate",
   "description": "Script for generating code by template",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "bin": {
     "generate": "generate"
   },

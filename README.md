@@ -5,7 +5,7 @@ Script for generating code by template
 ## INSTALLATION
 
 ```
-npm install -g generate
+npm install -g cli-generate
 ```
 
 ## DESCRIPTION
