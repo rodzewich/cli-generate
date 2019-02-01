@@ -1,4 +1,4 @@
-# GENERATE
+# CLI-GENERATE
 
 Script for generating code by template
 
