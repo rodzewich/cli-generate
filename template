@@ -252,6 +252,7 @@ function generateCode(name, target, models, cwd) {
 }
 
 function generateInline(source, target, models, cwd) {
+    var basepath = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
     return lock()
         .then(function () {
             isFile(source)
@@ -260,8 +261,8 @@ function generateInline(source, target, models, cwd) {
                         return Promise.all(models.map(function (model) {
                             return generate(
                                 model,
-                                path.join(base, source),
-                                path.join(base, replace(target, model))
+                                path.join(basepath, source),
+                                path.join(basepath, replace(target, model))
                             );
                         }));
                     }
@@ -274,8 +275,8 @@ function generateInline(source, target, models, cwd) {
                                     return Promise.all(files.map(function (file) {
                                         return generate(
                                             model,
-                                            path.join(base, source, file),
-                                            path.join(base, replace(path.join(target, file), model))
+                                            path.join(basepath, source, file),
+                                            path.join(basepath, replace(path.join(target, file), model))
                                         );
                                     }));
                                 }));

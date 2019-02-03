@@ -1,7 +1,7 @@
 {
   "name": "cli-template",
   "description": "Script for generating code by template",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "bin": {
     "template": "template",
     "tpl": "template"
