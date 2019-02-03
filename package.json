@@ -1,10 +1,10 @@
 {
   "name": "cli-template",
   "description": "Script for generating code by template",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "bin": {
-    "template": "template.js",
-    "tpl": "template.js"
+    "template": "template",
+    "tpl": "template"
   },
   "preferGlobal": true,
   "license": "MIT",
