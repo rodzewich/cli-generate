@@ -363,6 +363,6 @@ function generate(model, source, target) {
             return writeFile(target, replace(content, model));
         })
         .then(function () {
-            process.stdout.write(colors.green('CREATED' + ': ' + target + '\n'));
+            process.stdout.write(colors.green('CREATED') + ': ' + target + '\n');
         });
 }
