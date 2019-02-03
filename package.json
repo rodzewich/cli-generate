@@ -1,22 +1,27 @@
 {
-  "name": "cli-generate",
+  "name": "cli-template",
   "description": "Script for generating code by template",
   "version": "0.6.0",
   "bin": {
-    "generate": "generate"
+    "template": "template.js",
+    "tpl": "template.js"
   },
   "preferGlobal": true,
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.5.3",
     "cli-program": "^2.0.38",
+    "colors": "^1.3.3",
     "glob": "^7.1.3",
+    "lockfile": "^1.0.4",
     "lodash.camelcase": "^4.3.0",
     "lodash.kebabcase": "^4.1.1",
     "lodash.snakecase": "^4.1.1",
     "lodash.upperfirst": "^4.3.1",
     "mkdirp": "^0.5.1",
-    "npmlog": "^4.1.2",
-    "pluralize": "^7.0.0"
+    "osenv": "^0.1.5",
+    "pluralize": "^7.0.0",
+    "recursive-copy": "^2.0.9",
+    "rimraf": "^2.6.3"
   }
 }

@@ -1,11 +1,11 @@
-# CLI-GENERATE
+# CLI-TEMPLATE
 
 Script for generating code by template
 
 ## INSTALLATION
 
 ```
-npm install -g cli-generate
+npm install -g cli-template
 ```
 
 ## DESCRIPTION
@@ -15,15 +15,15 @@ This script needs for generating a lot of files by template. You need define sou
 ## USAGE
 
 ```
-$ generate --help
+$ template --help
 
-generate
+template
 
   Generate files by templates
 
 Usage:
 
-  generate [options...] <source> <target> [models...]
+  template [options...] <source> <target> [models...]
 
 Options:
 

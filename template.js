@@ -1,0 +1,365 @@
+var fs = require('fs');
+var glob = require('glob');
+var path = require('path');
+var mkdirp = require('mkdirp');
+var pluralize = require('pluralize');
+var camelCase = require('lodash.camelcase');
+var kebabCase = require('lodash.kebabcase');
+var snakeCase = require('lodash.snakecase');
+var upperFirst = require('lodash.upperfirst');
+var Promise = require('bluebird');
+var pkg = require('./package.json');
+var lockfile = require('lockfile');
+var recursiveCopy = require('recursive-copy');
+var rimraf = require('rimraf');
+var osenv = require('osenv');
+var LOCKFILE = path.join(osenv.home(), '.template.lock');
+var DIRECTORY = path.join(osenv.home(), '.template');
+var colors = require('colors/safe');
+
+var program = require('cli-program')
+    .name('template')
+    .version(pkg.version)
+    .description('Generate files by templates')
+    .option('-c, --cwd [string]');
+
+program
+    .command('add <name> <source>')
+    .description('This command remembers your template in your home directory and requires name and path to source for saving.')
+    .action(function (args, opts) {
+        addTemplate(args.name, args.source, opts.cwd);
+    });
+
+program
+    .command('remove <name>')
+    .description('This command removes your template from your home directory and requires name for removing.')
+    .action(function (args) {
+        removeTemplate(args.name);
+    });
+
+program
+    .command('recovery <name> <target>')
+    .description('This command recovers code from saved template into folder.')
+    .action(function (args, opts) {
+        recoveryTemplate(args.name, args.target, opts.cwd);
+    });
+
+program
+    .command('list')
+    .description('This command shows all saved templates.')
+    .action(function () {
+        showTemplates();
+    });
+
+program
+    .command('generate <name> <target> [models...]')
+    .description('This command generates code from saved template and requires saved template name and target folder for generating, also you need to define list of model names.')
+    .action(function (args, opts) {
+        generateCode(args.name, args.target, args.models, opts.cwd)
+    });
+
+program
+    .command('inline <source> <target> [models...]')
+    .description('This command generates code inline from source folder and requires path to source folder and target folder for generating, also you need to define list of model names.')
+    .action(function (args, opts) {
+        generateInline(args.source, args.target, args.models, opts.cwd)
+    });
+
+program.parse();
+
+function lock() {
+    return new Promise(function (resolve, reject) {
+        lockfile.lock(LOCKFILE, {}, function (error) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        })
+    });
+}
+
+function unlock() {
+    return new Promise(function (resolve, reject) {
+        lockfile.unlock(LOCKFILE, function (error) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        })
+    });
+}
+
+function copy(source, target) {
+    return remove(target)
+        .then(function () {
+            return new Promise(function (resolve, reject) {
+                recursiveCopy(source, target, function(error) {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
+        });
+}
+
+function remove(path) {
+    return new Promise(function (resolve, reject) {
+        rimraf(path, function (error){
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function readdir(path) {
+    return mkdir(path).then(function () {
+        return new Promise(function (resolve, reject) {
+            fs.readdir(path, function (error, files) {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(files.filter(function (file) {
+                        return ['.', '..'].indexOf(file) === -1;
+                    }));
+                }
+            });
+        });
+    });
+}
+
+function addTemplate(name, source, cwd) {
+    var preparedName = kebabCase(name).toUpperCase();
+    var basepath = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
+    return lock()
+        .then(function () {
+            return copy(
+                path.join(basepath, source),
+                path.join(DIRECTORY, preparedName)
+            );
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            process.stdout.write('Template ' + JSON.stringify(preparedName) + ' was created successfully\n');
+            return unlock();
+        });
+}
+
+function removeTemplate(name) {
+    var preparedName = kebabCase(name).toUpperCase();
+    return lock()
+        .then(function () {
+            return remove(path.join(DIRECTORY, preparedName));
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            process.stdout.write('Template ' + JSON.stringify(preparedName) + ' was removed successfully\n');
+            return unlock();
+        });
+}
+
+function recoveryTemplate(name, target, cwd) {
+    var preparedName = kebabCase(name).toUpperCase();
+    var basepath = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
+    return lock()
+        .then(function () {
+            return copy(
+                path.join(DIRECTORY, preparedName),
+                path.join(basepath, target)
+            );
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            process.stdout.write('Template ' + JSON.stringify(preparedName) + ' was recovered successfully\n');
+            return unlock();
+        });
+}
+
+function showTemplates() {
+    return lock()
+        .then(function () {
+            return readdir(DIRECTORY);
+        })
+        .then(function (files) {
+            for (var index = 0; index < files.length; index++) {
+                process.stdout.write('  ' + files[index] + '\n');
+            }
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            return unlock();
+        });
+}
+
+function generateCode(name, target, models, cwd) {
+    var preparedName = kebabCase(name).toUpperCase();
+    var basepath = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
+    return lock()
+        .then(function () {
+            var source = path.join(DIRECTORY, preparedName);
+            isFile(source)
+                .then(function (isFile) {
+                    if (isFile) {
+                        return Promise.all(models.map(function (model) {
+                            return generate(
+                                model,
+                                path.join(basepath, source),
+                                path.join(basepath, replace(target, model))
+                            );
+                        }));
+                    }
+                    return new Promise(function (resolve, reject) {
+                        glob('**!/!*', {cwd: source}, function (error, files) {
+                            if (error) {
+                                reject(error);
+                            } else {
+                                return Promise.all(models.map(function (model) {
+                                    return Promise.all(files.map(function (file) {
+                                        return generate(
+                                            model,
+                                            path.join(basepath, source, file),
+                                            path.join(basepath, replace(path.join(target, file), model))
+                                        );
+                                    }));
+                                }));
+                            }
+                        });
+                    });
+                });
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            return unlock();
+        });
+}
+
+function generateInline(source, target, models, cwd) {
+    return lock()
+        .then(function () {
+            isFile(source)
+                .then(function (isFile) {
+                    if (isFile) {
+                        return Promise.all(models.map(function (model) {
+                            return generate(
+                                model,
+                                path.join(base, source),
+                                path.join(base, replace(target, model))
+                            );
+                        }));
+                    }
+                    return new Promise(function (resolve, reject) {
+                        glob('**!/!*', {cwd: source}, function (error, files) {
+                            if (error) {
+                                reject(error);
+                            } else {
+                                return Promise.all(models.map(function (model) {
+                                    return Promise.all(files.map(function (file) {
+                                        return generate(
+                                            model,
+                                            path.join(base, source, file),
+                                            path.join(base, replace(path.join(target, file), model))
+                                        );
+                                    }));
+                                }));
+                            }
+                        });
+                    });
+                });
+        })
+        .catch(function (error) {
+            process.stderr.write(colors.red(error.stack || error.message || error) + '\n');
+        })
+        .then(function () {
+            return unlock();
+        });
+}
+
+function mkdir(path) {
+    return new Promise(function (resolve, reject) {
+        mkdirp(path, function (error) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function readFile(path) {
+    return new Promise(function(resolve, reject) {
+        fs.readFile(path, {encoding: 'utf8'}, function(error, content) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(content);
+            }
+        });
+    });
+}
+
+function writeFile(path, content) {
+    return new Promise(function(resolve, reject) {
+        fs.writeFile(path, content, function(error) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve();
+            }
+        })
+    })
+}
+
+function isFile(path) {
+    return new Promise(function (resolve, reject) {
+        fs.lstat(path, function (error, stat) {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(stat.isFile());
+            }
+        });
+    });
+}
+
+function replace(content, model) {
+    return content
+        .replace(/\${year}/g, new Date().getFullYear().toString())
+        .replace(/TemplateModels/g,  upperFirst(camelCase(pluralize(model))))
+        .replace(/TemplateModel/g,   upperFirst(camelCase(model)))
+        .replace(/templateModels/g,  camelCase(pluralize(model)))
+        .replace(/templateModel/g,   camelCase(model))
+        .replace(/template-models/g, kebabCase(pluralize(model)))
+        .replace(/template-model/g,  kebabCase(model))
+        .replace(/template_models/g, snakeCase(pluralize(model)))
+        .replace(/template_model/g,  snakeCase(model));
+}
+
+function generate(model, source, target) {
+    return mkdir(path.dirname(target))
+        .then(function () {
+            return readFile(source);
+        })
+        .then(function (content) {
+            return writeFile(target, replace(content, model));
+        })
+        .then(function () {
+            process.stdout.write(colors.green('CREATED' + ': ' + target + '\n'));
+        });
+}
