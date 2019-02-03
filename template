@@ -220,7 +220,8 @@ function generateCode(name, target, models, cwd) {
                             return generate(
                                 model,
                                 path.join(basepath, source),
-                                path.join(basepath, replace(target, model))
+                                path.join(basepath, replace(target, model)),
+                                basepath
                             );
                         }));
                     }
@@ -234,7 +235,8 @@ function generateCode(name, target, models, cwd) {
                                         return generate(
                                             model,
                                             path.join(basepath, source, file),
-                                            path.join(basepath, replace(path.join(target, file), model))
+                                            path.join(basepath, replace(path.join(target, file), model)),
+                                            basepath
                                         );
                                     }));
                                 }));
@@ -262,7 +264,8 @@ function generateInline(source, target, models, cwd) {
                             return generate(
                                 model,
                                 path.join(basepath, source),
-                                path.join(basepath, replace(target, model))
+                                path.join(basepath, replace(target, model)),
+                                basepath
                             );
                         }));
                     }
@@ -276,7 +279,8 @@ function generateInline(source, target, models, cwd) {
                                         return generate(
                                             model,
                                             path.join(basepath, source, file),
-                                            path.join(basepath, replace(path.join(target, file), model))
+                                            path.join(basepath, replace(path.join(target, file), model)),
+                                            basepath
                                         );
                                     }));
                                 }));
@@ -354,7 +358,7 @@ function replace(content, model) {
         .replace(/template_model/g,  snakeCase(model));
 }
 
-function generate(model, source, target) {
+function generate(model, source, target, cwd) {
     return mkdir(path.dirname(target))
         .then(function () {
             return readFile(source);
@@ -363,6 +367,6 @@ function generate(model, source, target) {
             return writeFile(target, replace(content, model));
         })
         .then(function () {
-            process.stdout.write(colors.green('CREATED') + ': ' + target + '\n');
+            process.stdout.write(colors.green('CREATED') + ': ' + path.resolve(cwd, target) + '\n');
         });
 }
